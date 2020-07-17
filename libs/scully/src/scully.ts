@@ -3,6 +3,10 @@
 /**
  * The above line is needed to be able to run in npx and CI.
  */
+if (!globalThis && !global.globalThis) {
+  // @ts-ignore-next-line
+  global.globalThis = {};
+}
 import { readFileSync } from 'fs-extra';
 import open from 'open';
 import { join } from 'path';
@@ -10,7 +14,7 @@ import './lib/pluginManagement/systemPlugins';
 import { startBackgroundServer } from './lib/startBackgroundServer';
 import { waitForServerToBeAvailable, ScullyConfig } from './lib/utils';
 import { ssl, hostName, openNavigator, removeStaticDist, watch } from './lib/utils/cli-options';
-import { loadConfig, scullyDefaults } from './lib/utils/config';
+import { loadConfig, scullyDefaults, startDefaultLoad } from './lib/utils/config';
 import { moveDistAngular } from './lib/utils/fsAngular';
 import { httpGetJson } from './lib/utils/httpGetJson';
 import { logError, logWarn, yellow } from './lib/utils/log';
@@ -33,6 +37,7 @@ if (process.argv.includes('version')) {
   let err;
   /** load the config, and use the defaults when there is an error */
   try {
+    startDefaultLoad();
     scullyConfig = await loadConfig;
   } catch (e) {
     scullyConfig = scullyDefaults as ScullyConfig;

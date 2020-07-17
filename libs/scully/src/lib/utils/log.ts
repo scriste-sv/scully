@@ -35,10 +35,16 @@ function enhancedLog(colorFn, severity: LogSeverity, ...args: any[]) {
       .then(() => logToFile('\r\n'))
       .catch((e) => console.log('error while loggin to file', e));
   }
+  process.stdout.cork();
   // tslint:disable-next-line: no-unused-expression
   process.stdout.cursorTo && process.stdout.cursorTo(0);
   process.stdout.write(colorFn(...out));
   process.stdout.write('\n');
+  process.nextTick(doUnCork, process.stdout);
+}
+
+function doUnCork(stream) {
+  stream.uncork();
 }
 
 function makeRelative(txt: string) {

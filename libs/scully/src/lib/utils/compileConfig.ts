@@ -1,17 +1,7 @@
 import { unlinkSync } from 'fs';
-import {
-  existsSync,
-  pathExists,
-  readFileSync,
-  statSync,
-  writeFileSync,
-} from 'fs-extra';
+import { existsSync, pathExists, readFileSync, statSync, writeFileSync } from 'fs-extra';
 import { join } from 'path';
-import {
-  flattenDiagnosticMessageText,
-  transpileModule,
-  TranspileOutput,
-} from 'typescript';
+import { flattenDiagnosticMessageText, transpileModule, TranspileOutput } from 'typescript';
 import { configFileName, project } from './cli-options';
 import { findAngularJsonPath } from './findAngularJsonPath';
 import { ScullyConfig } from './interfacesandenums';
@@ -23,32 +13,27 @@ const angularRoot = findAngularJsonPath();
 const angularConfig = readAngularJson();
 const defaFaultProjectName = angularConfig.defaultProject;
 
-const createConfigName = (name = defaFaultProjectName) =>
-  `scully.${name}.config.ts`;
+const createConfigName = (name = defaFaultProjectName) => `scully.${name}.config.ts`;
 const getJsName = (name: string) => name.replace('.ts', '.js');
 
-export const compileConfig = async (): Promise<ScullyConfig> => {
+export const compileConfig = async (pj = project): Promise<ScullyConfig> => {
   let path: string;
   try {
     path = join(angularRoot, createConfigName());
     if (configFileName) {
       path = join(angularRoot, configFileName);
     }
-    if (project) {
-      path = join(angularRoot, createConfigName(project));
+    if (pj) {
+      path = join(angularRoot, createConfigName(pj));
     }
     if (!(await pathExists(path))) {
       /** no js config, nothing to do. */
       logWarn(`
 ---------
-    Config file "${yellow(
-      path
-    )}" not found, only rendering routes without parameters
+    Config file "${yellow(path)}" not found, only rendering routes without parameters
     The config file should have a name that is formated as:
        scully.${yellow('<projectName>')}.config.ts
-    where ${yellow(
-      '<projectName>'
-    )} is the name of the project as defined in the 'angular.json' file
+    where ${yellow('<projectName>')} is the name of the project as defined in the 'angular.json' file
     When you are in a mixed mono-repo you might need to use the --pjFirst flag.
 ---------
 `);
@@ -86,33 +71,19 @@ async function compileTsIfNeeded(path) {
       if (js.diagnostics.length > 0) {
         logError(
           `----------------------------------------------------------------------------------------
-       Error${
-         js.diagnostics.length === 1 ? '' : 's'
-       } while typescript compiling "${yellow(path)}"`
+       Error${js.diagnostics.length === 1 ? '' : 's'} while typescript compiling "${yellow(path)}"`
         );
         js.diagnostics.forEach((diagnostic) => {
           if (diagnostic.file) {
             // tslint:disable-next-line: no-non-null-assertion
-            const {
-              line,
-              character,
-            } = diagnostic.file.getLineAndCharacterOfPosition(
-              diagnostic.start!
-            );
-            const message = flattenDiagnosticMessageText(
-              diagnostic.messageText,
-              '\n'
-            );
+            const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
+            const message = flattenDiagnosticMessageText(diagnostic.messageText, '\n');
             logError(`    line (${line + 1},${character + 1}): ${message}`);
           } else {
-            logError(
-              flattenDiagnosticMessageText(diagnostic.messageText, '\n')
-            );
+            logError(flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
           }
         });
-        logError(
-          '----------------------------------------------------------------------------------------'
-        );
+        logError('----------------------------------------------------------------------------------------');
         process.exit(15);
       }
       writeFileSync(jsFile, js.outputText);

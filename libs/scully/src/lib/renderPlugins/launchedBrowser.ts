@@ -10,7 +10,7 @@ const launches = new BehaviorSubject<void>(undefined);
 /**
  * Returns an Observable with that will fire with the launched puppeteer in there.
  */
-const launched: Observable<Browser> = from(loadConfig).pipe(
+const launched: Observable<Browser> = launches.pipe(
   /** give the system a bit of breathing room, and prevent race */
   switchMap(() => from(waitForIt(50))),
   switchMap(() => merge(obsBrowser(), launches)),
